@@ -32,7 +32,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-#include "esp_intr.h"
+
+// by JG 
+// old: #include "esp_intr.h" is deprecated
+#include "esp_intr_alloc.h"
+
 #include "soc/dport_reg.h"
 #include <math.h>
 
