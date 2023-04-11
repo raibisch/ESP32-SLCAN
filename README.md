@@ -5,6 +5,8 @@ This work is mostly based on the work from:
  * ESP32CAN-Class: [miwagner/ESP32-Arduino-CAN](https://github.com/miwagner/ESP32-Arduino-CAN)
  * ESP32 CAN driver: [ThomasBarth/ESP32-CAN-Driver](https://github.com/ThomasBarth/ESP32-CAN-Driver)
 
+it was tested and developed on PlatformIO, but could easy adpated to ARDUINO-IDE.
+
 ## Hardware-Adaption 
 For propper CAN-Signals we need a hardware CAN controller TJA1050:
 #### Datasheet
