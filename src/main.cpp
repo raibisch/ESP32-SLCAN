@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <Preferences.h>             // by JG store Serial-Baudrate
 #include <ESP32CAN.h>           // v1.0.0     from https://github.com/nhatuan84/arduino-esp32-can-demo
 #include <CAN_config.h>         // as above
 
@@ -23,15 +23,16 @@ CAN_device_t              CAN_cfg;
 BluetoothSerial           SerialBT;
 #endif
 
+Preferences prefs;        // by JG
+
 boolean working           = false;
-boolean bluetooth         = false;
 boolean timestamp         = false;
 boolean cr                = false;
 int can_speed             = 250;
-// int ser_speed          = 460800;
-int ser_speed             = 115200;
+static int ser_speed      = 115200;
 
 #ifdef BT_SERIAL
+boolean bluetooth = false;
 const int SWITCH_PIN_A    = 12;
 #endif
 //const int SWITCH_PIN_B  = 14;
@@ -119,7 +120,8 @@ void send_canmsg(char *buf, boolean rtr, boolean ext) {
 
 void pars_slcancmd(char *buf)
 {                           // LAWICEL PROTOCOL
-  switch (buf[0]) {
+  switch (buf[0]) 
+  {
     case 'O':               // OPEN CAN
       working=true;
       ESP32Can.CANInit();
@@ -132,10 +134,12 @@ void pars_slcancmd(char *buf)
       break;
     case 't':               // SEND STD FRAME
       send_canmsg(buf,false,false);
+      Serial.write('z'); // by JG: is send with original CANUSB-Adapter V1011
       slcan_ack();
       break;
     case 'T':               // SEND EXT FRAME
       send_canmsg(buf,false,true);
+      Serial.write('Z'); // by JG: is send with original CANUSB-Adapter V1011
       slcan_ack();
       break;
     case 'r':               // SEND STD RTR FRAME
@@ -160,13 +164,13 @@ void pars_slcancmd(char *buf)
           break;
       }
       break;
-    case 'M':               ///set ACCEPTANCE CODE ACn REG
+    case 'M': // set ACCEPTANCE CODE ACn REG (not supported)
       slcan_ack();
       break;
-    case 'm':               // set ACCEPTANCE CODE AMn REG
+    case 'm': // set ACCEPTANCE CODE AMn REG (not supported)
       slcan_ack();
       break;
-    case 's':               // CUSTOM CAN bit-rate
+    case 's': // CUSTOM CAN bit-rate (not supported)
       slcan_nack();
       break;
     case 'S':               // CAN bit-rate
@@ -220,7 +224,8 @@ void pars_slcancmd(char *buf)
       if (bluetooth) SerialBT.print("F00");
       else 
       #endif
-      Serial.print("F00");
+      Serial.write('F');
+      Serial.print("00");  // Fake output no real value
       slcan_ack();
       break;
     case 'V':               // VERSION NUMBER
@@ -228,7 +233,8 @@ void pars_slcancmd(char *buf)
       if (bluetooth) SerialBT.print("V1234");
       else 
       #endif
-      Serial.print("V1012");
+      Serial.write('V');
+      Serial.print("1012");
       slcan_ack();
       break;
     case 'N':               // SERIAL NUMBER
@@ -236,8 +242,29 @@ void pars_slcancmd(char *buf)
       if (bluetooth) SerialBT.print("N2208");
       else 
       #endif
-      Serial.print("N2208");
+      Serial.write('N');
+      Serial.print("Z911");
       slcan_ack();
+      break;
+    case 'b':               // by JG: (NOT SPEC) Set Serial-Baud (0) 115200 or (1) 460800
+      if (buf[1] == '1')
+      {
+        ser_speed = 460800;
+        prefs.putChar("bx", 1);
+      }
+      else
+      {
+       ser_speed = 115200;
+       prefs.putChar("bx", 0);
+      }
+      Serial.print("set Baudrate to:");
+      Serial.println(ser_speed);
+      slcan_nack();
+      delay(100);
+      Serial.updateBaudRate(ser_speed);
+      break;
+    case 'x':
+      ESP.restart();
       break;
     case 'l':               // (NOT SPEC) TOGGLE LINE FEED ON SERIAL
       cr = !cr;
@@ -247,36 +274,39 @@ void pars_slcancmd(char *buf)
       Serial.println();
       Serial.println("slcan esp32");
       Serial.println();
-      Serial.println("O\t=\tStart slcan");
-      Serial.println("C\t=\tStop slcan");
-      Serial.println("t\t=\tSend std frame");
-      Serial.println("r\t=\tSend std rtr frame");
-      Serial.println("T\t=\tSend ext frame");
-      Serial.println("R\t=\tSend ext rtr frame");
-      Serial.println("Z0\t=\tTimestamp Off");
-      Serial.println("Z1\t=\tTimestamp On");
-      Serial.println("snn\t=\tSpeed 0xnnk N/A");
-      Serial.println("S0\t=\tSpeed 10k N/A");
-      Serial.println("S1\t=\tSpeed 20k N/A");
-      Serial.println("S2\t=\tSpeed 50k N/A");
-      Serial.println("S3\t=\tSpeed 100k");
-      Serial.println("S4\t=\tSpeed 125k");
-      Serial.println("S5\t=\tSpeed 250k");
-      Serial.println("S6\t=\tSpeed 500k");
-      Serial.println("S7\t=\tSpeed 800k");
-      Serial.println("S8\t=\tSpeed 1000k");
-      Serial.println("F\t=\tFlags N/A");
-      Serial.println("N\t=\tSerial No");
-      Serial.println("V\t=\tVersion");
+      Serial.println("O  = Start slcan");
+      Serial.println("C  = Stop slcan");
+      Serial.println("t  = Send std frame");
+      Serial.println("r  = Send std rtr frame");
+      Serial.println("T  = Send ext frame");
+      Serial.println("R  = Send ext rtr frame");
+      Serial.println("Z0 = Timestamp Off");
+      Serial.println("Z1 = Timestamp On");
+      Serial.println("snn= Speed 0xnnk N/A");
+      Serial.println("S0 = Speed 10k N/A");
+      Serial.println("S1 = Speed 20k N/A");
+      Serial.println("S2 = Speed 50k N/A");
+      Serial.println("S3 = Speed 100k");
+      Serial.println("S4 = Speed 125k");
+      Serial.println("S5 = Speed 250k");
+      Serial.println("S6 = Speed 500k");
+      Serial.println("S7 = Speed 800k");
+      Serial.println("S8 = Speed 1000k");
+      Serial.println("F  = Flags N/A");
+      Serial.println("N  = Serial No");
+      Serial.println("V  = Version");
       Serial.println("-----NOT SPEC-----");
-      Serial.println("h\t=\tHelp");
-      Serial.print("l\t=\tToggle CR ");
+      Serial.println("h  = this Help");
+      Serial.println("b0 = SerBaud:115200");
+      Serial.println("b1 = SerBaud:460800");
+      Serial.println("x  = RESTART ESP32");
+      Serial.print("l  = Toggle CR ");
       if (cr) {
         Serial.println("ON");
       } else {
         Serial.println("OFF");
       }
-      Serial.print("CAN_SPEED:\t");
+      Serial.print("CAN_SPEED:");
       switch(can_speed) {
         case 100:
           Serial.print("100");
@@ -299,14 +329,14 @@ void pars_slcancmd(char *buf)
         default:
           break;
       }
-      Serial.print("kbps");
+      Serial.print("kbps ");
       if (timestamp) {
-        Serial.print("\tT");
+        Serial.print("TStamp:ON ");
       }
       if (working) {
-        Serial.print("\tON");
+        Serial.print("CAN:OPEN");
       } else {
-        Serial.print("\tOFF");
+        Serial.print("CAN:CLOSE");
       }
       Serial.println();
       slcan_nack();
@@ -347,8 +377,10 @@ void transfer_tty2can()
   else 
   #endif
   {
-    if ((ser_length = Serial.available()) > 0) {
-      for (int i = 0; i < ser_length; i++) {
+    if ((ser_length = Serial.available()) > 0) 
+    {
+      for (int i = 0; i < ser_length; i++) 
+      {
         char val = Serial.read();
         cmdbuf[cmdidx++] = val;
         if (cmdidx == 32)
@@ -374,13 +406,47 @@ void transfer_can2tty()
   String command = "";
   long time_now = 0;
   //receive next CAN frame from queue
-  if(xQueueReceive(CAN_cfg.rx_queue,&rx_frame, 3*portTICK_PERIOD_MS)==pdTRUE) {
+  // alternative implementation (not testet)
+  /*
+    // Abfrage von Empfangenen CAN-Nachhrichten
+    if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) 
+    {
+      // Abfrage auf Ext. Datenframe
+      if (rx_frame.FIR.B.FF == CAN_frame_ext) 
+      {
+        ASCIIFrame[0] = 84; // -> 'T'
+        byteToHex(rx_frame.MsgID >> 24, &ASCIIFrame[1]);
+        byteToHex(rx_frame.MsgID >> 16, &ASCIIFrame[3]);
+        byteToHex(rx_frame.MsgID >> 8, &ASCIIFrame[5]);
+        byteToHex(rx_frame.MsgID , &ASCIIFrame[7]);
+        ASCIIFrame[9] = nibbleToHex(rx_frame.FIR.B.DLC);
+        for (int i = 0; i < rx_frame.FIR.B.DLC; i++) {
+          byteToHex(rx_frame.data.u8[i], &DataASCII[0]);
+          ASCIIFrame[10+(2*i)]=DataASCII[0];
+          ASCIIFrame[11+(2*i)]=DataASCII[1];
+        }
+        // Wiedergabe ohne Timestamp
+        // [CR]
+        ASCIIFrame[10+(rx_frame.FIR.B.DLC * 2)]=13;
+        // Ausgabe des Frames, Laenge: 15...31 Bytes
+        Serial.write(ASCIIFrame, (11+(rx_frame.FIR.B.DLC * 2)));
+      } // Ende Ext. Dataframe
+    }// Ende CAN-Empfang
+
+  */
+
+  if(xQueueReceive(CAN_cfg.rx_queue,&rx_frame, 3*portTICK_PERIOD_MS)==pdTRUE) 
+  {
     //do stuff!
-    if(working) {
-      if(rx_frame.FIR.B.FF==CAN_frame_ext) {
-        if (rx_frame.FIR.B.RTR==CAN_RTR) {
+    if(working) 
+    {
+      if(rx_frame.FIR.B.FF==CAN_frame_ext) 
+      {
+        if (rx_frame.FIR.B.RTR==CAN_RTR) 
+        {
           command = command + "R";
-        } else {
+        } else 
+        {
           command = command + "T";
         }
         command = command + char(hexval[ (rx_frame.MsgID>>28)&1]);
@@ -392,7 +458,9 @@ void transfer_can2tty()
         command = command + char(hexval[ (rx_frame.MsgID>>4)&15]);
         command = command + char(hexval[ rx_frame.MsgID&15]);
         command = command + char(hexval[ rx_frame.FIR.B.DLC ]);
-      } else {
+      } 
+      else 
+      {
         if (rx_frame.FIR.B.RTR==CAN_RTR) {
           command = command + "r";
         } else {
@@ -408,7 +476,8 @@ void transfer_can2tty()
         command = command + char(hexval[ rx_frame.data.u8[i]&15 ]);
         //printf("%c\t", (char)rx_frame.data.u8[i]);
       }
-    if (timestamp) {
+    if (timestamp) 
+    {
       time_now = millis() % 60000;
       command = command + char(hexval[ (time_now>>12)&15 ]);
       command = command + char(hexval[ (time_now>>8)&15 ]);
@@ -431,13 +500,30 @@ void transfer_can2tty()
 
 void setup() 
 {
-  //Wire.begin(21,22);
+  delay(200);
+  prefs.begin("pref");
+  uint8_t bx= prefs.getChar("bx");
+  if (bx == 1)
+  {
+    ser_speed = 460800;
+    prefs.putChar("bx",1);
+  }  
+  else
+  {
+    ser_speed = 115200;
+    prefs.putChar("bx",0);
+  }
+  
+ 
 #ifdef BT_SERIAL
   pinMode(SWITCH_PIN_A,INPUT_PULLUP);
 #endif
   //pinMode(SWITCH_PIN_B,INPUT_PULLUP);
   Serial.begin(ser_speed);
   delay(100);
+  Serial.print("set Baudrate to:");
+  Serial.println(ser_speed);
+
   //Serial.println("CAN demo");
   CAN_cfg.speed=CAN_SPEED_250KBPS;
   CAN_cfg.tx_pin_id = GPIO_NUM_5;
