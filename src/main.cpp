@@ -11,6 +11,7 @@
 // CURRENTLY ESP32 Dev Module Board Definition
 // PIN 4  CANTX 
 // PIN 5  CANRX 
+// by JG change: CANTX=5, CANRX=4
 // PIN 12 BLUETOOTH SWITCH (only if BT_SERIAL defined)
 // PIN 14 NOT IN USE
 // PIN 15 10k to ground to remove boot messages
@@ -227,7 +228,7 @@ void pars_slcancmd(char *buf)
       if (bluetooth) SerialBT.print("V1234");
       else 
       #endif
-      Serial.print("V1234");
+      Serial.print("V1012");
       slcan_ack();
       break;
     case 'N':               // SERIAL NUMBER
@@ -439,8 +440,8 @@ void setup()
   delay(100);
   //Serial.println("CAN demo");
   CAN_cfg.speed=CAN_SPEED_250KBPS;
-  CAN_cfg.tx_pin_id = GPIO_NUM_4;
-  CAN_cfg.rx_pin_id = GPIO_NUM_5;
+  CAN_cfg.tx_pin_id = GPIO_NUM_5;
+  CAN_cfg.rx_pin_id = GPIO_NUM_4;
   CAN_cfg.rx_queue = xQueueCreate(10,sizeof(CAN_frame_t));
   delay(2000);
    #ifdef BT_SERIAL
@@ -460,7 +461,10 @@ void setup()
 
 //----------------------------------------------------------------
 
-void loop() {
+void loop() 
+{
   transfer_can2tty();
+  NOP();
+  //delayMicroseconds(1);
   transfer_tty2can();
 } // loop();
