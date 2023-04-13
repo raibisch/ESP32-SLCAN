@@ -272,7 +272,7 @@ void pars_slcancmd(char *buf)
       break;
     case 'h':               // (NOT SPEC) HELP SERIAL
       Serial.println();
-      Serial.println("slcan esp32");
+      Serial.println("esp32-sclan JG");
       Serial.println();
       Serial.println("O  = Start slcan");
       Serial.println("C  = Stop slcan");
