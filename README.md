@@ -25,13 +25,16 @@ For propper CAN-Signals we need a hardware CAN controller TJA1050:
 
 * NEW: Serial-Baudrate could be (persistent) switched from 115200Bd to 460800Bd for better performance at high CAN      busload. Command 'b0=115200Bd' b1=460800Bd'
 * NEW: Command 'x' for ESP32 restart (Softare-Reset)
-* CAN-Bus Baudrate : 250kBd ...could be chanced with 'S' command
+* CAN-Bus Baudrate : 250kBd ...could be chanced with 's5' command
 * CAN-Pins: CAN_TX_PIN GPIO_NUM_5, CAN_RX_PIN GPIO_NUM_4 (conntect TJA1050 to this pins)
 * Serial-Bluetooth: disabled (could be enabled with '#define BT_SERIAL'
 
 ## CAN-Applications supporting SLCAN
 
 the [CANable-Projekt getting started](https://canable.io/getting-started.html)
+
+
+[get SLCAN-Adapter working on Linux](howto_slcand.md)
 
 ## Download and Installation
 
