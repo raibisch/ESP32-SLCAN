@@ -33,8 +33,8 @@ For propper CAN-Signals we need a hardware CAN controller TJA1050:
 
 the [CANable-Projekt getting started](https://canable.io/getting-started.html)
 
-
-[get SLCAN-Adapter working on Linux](howto_slcand.md)
+## Howto...
+[...get SLCAN-Adapter working on Linux](howto_slcand.md)
 
 ## Download and Installation
 

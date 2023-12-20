@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Preferences.h>             // by JG store Serial-Baudrate
+#include <Preferences.h>        // by JG store Serial-Baudrate
 #include <ESP32CAN.h>           // v1.0.0     from https://github.com/nhatuan84/arduino-esp32-can-demo
 #include <CAN_config.h>         // as above
 
@@ -17,6 +17,16 @@
 // PIN 15 10k to ground to remove boot messages
 // 3.3v 
 // GND to SWITCH CENTER
+
+// for ESP32-DEF-Modul
+#define GPIO_CAN_TX GPIO_NUM_5
+#define GPIO_CAN_RX GPIO_NUM_4
+
+// for M5-Core-2
+//#define GPIO_CAN_TX GPIO_NUM_26
+//#define GPIO_CAN_RX GPIO_NUM_36
+
+
 
 CAN_device_t              CAN_cfg;
 #ifdef BT_SERIAL
@@ -272,7 +282,7 @@ void pars_slcancmd(char *buf)
       break;
     case 'h':               // (NOT SPEC) HELP SERIAL
       Serial.println();
-      Serial.println("esp32-sclan JG");
+      Serial.println("esp32-sclan by JG");
       Serial.println();
       Serial.println("O  = Start slcan");
       Serial.println("C  = Stop slcan");
@@ -282,10 +292,10 @@ void pars_slcancmd(char *buf)
       Serial.println("R  = Send ext rtr frame");
       Serial.println("Z0 = Timestamp Off");
       Serial.println("Z1 = Timestamp On");
-      Serial.println("snn= Speed 0xnnk N/A");
-      Serial.println("S0 = Speed 10k N/A");
-      Serial.println("S1 = Speed 20k N/A");
-      Serial.println("S2 = Speed 50k N/A");
+      //Serial.println("snn= Speed 0xnnk N/A");
+      //Serial.println("S0 = Speed 10k N/A");
+      //Serial.println("S1 = Speed 20k N/A");
+      //Serial.println("S2 = Speed 50k N/A");
       Serial.println("S3 = Speed 100k");
       Serial.println("S4 = Speed 125k");
       Serial.println("S5 = Speed 250k");
@@ -300,7 +310,7 @@ void pars_slcancmd(char *buf)
       Serial.println("b0 = SerBaud:115200");
       Serial.println("b1 = SerBaud:460800");
       Serial.println("x  = RESTART ESP32");
-      Serial.print("l  = Toggle CR ");
+      Serial.print  ("l  = Toggle CR ");
       if (cr) {
         Serial.println("ON");
       } else {
@@ -362,7 +372,7 @@ void transfer_tty2can()
         char val = SerialBT.read();
         cmdbuf[cmdidx++] = val;
         if (cmdidx == 32)
-        {
+        {T0100011081122334455667783
           slcan_nack();
           cmdidx = 0;
         } else if (val == '\r')
@@ -387,7 +397,8 @@ void transfer_tty2can()
         {
           slcan_nack();
           cmdidx = 0;
-        } else if (val == '\r')
+        } 
+        else if (val == '\r')
         {
           cmdbuf[cmdidx] = '\0';
           pars_slcancmd(cmdbuf);
@@ -501,6 +512,8 @@ void transfer_can2tty()
 void setup() 
 {
   delay(200);
+
+  // by JG restore baudrate from Flash
   prefs.begin("pref");
   uint8_t bx= prefs.getChar("bx");
   if (bx == 1)
@@ -526,8 +539,8 @@ void setup()
 
   //Serial.println("CAN demo");
   CAN_cfg.speed=CAN_SPEED_250KBPS;
-  CAN_cfg.tx_pin_id = GPIO_NUM_5;
-  CAN_cfg.rx_pin_id = GPIO_NUM_4;
+  CAN_cfg.tx_pin_id = GPIO_CAN_TX;
+  CAN_cfg.rx_pin_id = GPIO_CAN_RX;
   CAN_cfg.rx_queue = xQueueCreate(10,sizeof(CAN_frame_t));
   delay(2000);
    #ifdef BT_SERIAL
