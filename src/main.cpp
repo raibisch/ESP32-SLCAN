@@ -534,7 +534,7 @@ void setup()
   //pinMode(SWITCH_PIN_B,INPUT_PULLUP);
   Serial.begin(ser_speed);
   delay(100);
-  Serial.print("set Baudrate to:");
+  Serial.print("SLCAN set Baudrate to:");
   Serial.println(ser_speed);
 
   //Serial.println("CAN demo");
